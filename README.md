@@ -24,3 +24,10 @@ Clonar el repositorio:
 
 ```bash
 git clone URL_DEL_REPOSITORIO
+
+## Registro de usuarios
+
+### Endpoint
+
+```http
+POST /api/sessions/register
