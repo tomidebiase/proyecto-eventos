@@ -3,7 +3,12 @@ import {
   saveUser
 } from '../repositories/users.repository.js'
 
-import { createHash } from '../utils/hash.js'
+import {
+  createHash,
+  isValidPassword
+} from '../utils/hash.js'
+
+import { generateToken } from '../utils/jwt.js'
 
 export const registerUser = async (userData) => {
   const { first_name, last_name, email, password } = userData
@@ -15,7 +20,6 @@ export const registerUser = async (userData) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase()
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   if (!emailRegex.test(normalizedEmail)) {
@@ -54,4 +58,36 @@ export const registerUser = async (userData) => {
     email: user.email,
     role: user.role
   }
+}
+
+export const loginUser = async ({ email, password }) => {
+  if (!email || !password) {
+    const error = new Error('Credenciales inválidas')
+    error.statusCode = 401
+    throw error
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+
+  const user = await getUserByEmail(normalizedEmail)
+
+  if (!user) {
+    const error = new Error('Credenciales inválidas')
+    error.statusCode = 401
+    throw error
+  }
+
+  const validPassword = await isValidPassword(password, user.password)
+
+  if (!validPassword) {
+    const error = new Error('Credenciales inválidas')
+    error.statusCode = 401
+    throw error
+  }
+
+  return generateToken({
+    id: user._id.toString(),
+    email: user.email,
+    role: user.role
+  })
 }

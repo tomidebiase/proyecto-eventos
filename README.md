@@ -2,20 +2,36 @@
 
 API REST desarrollada para el proyecto de Backend II.
 
+## Pre-entrega 3
+
+En esta etapa se implementó autenticación de usuarios mediante JWT almacenado en una cookie HTTP Only.
+
+El sistema permite:
+
+- Registrar usuarios.
+- Iniciar sesión.
+- Generar un JWT.
+- Guardar el JWT en una cookie `currentUser`.
+- Consultar el usuario autenticado.
+- Cerrar sesión.
+- Proteger rutas mediante middleware de autenticación.
+
 ## Temática
 
-El proyecto consiste en una plataforma de eventos e inscripciones donde los usuarios podrán consultar eventos, registrarse y, en futuras etapas, inscribirse a eventos.
+El proyecto consiste en una plataforma de eventos e inscripciones donde los usuarios podrán consultar eventos y registrarse.
 
-También se incorporarán organizadores y administradores con diferentes permisos.
+En futuras etapas se incorporarán inscripciones a eventos, organizadores, administradores y permisos según roles.
 
 ## Tecnologías
 
 - Node.js
 - Express
 - JavaScript
-- MongoDB
+- MongoDB Atlas
 - Mongoose
 - bcrypt
+- JSON Web Token
+- cookie-parser
 - dotenv
 - npm
 
@@ -33,7 +49,7 @@ Entrar al proyecto:
 cd proyecto-eventos
 ```
 
-Instalar dependencias:
+Instalar las dependencias:
 
 ```bash
 npm install
@@ -46,9 +62,14 @@ Crear un archivo `.env` tomando como referencia `.env.example`.
 ```env
 PORT=8080
 NODE_ENV=development
-MONGO_URL=mongodb://127.0.0.1:27017/proyecto_eventos
+MONGO_URL=
 JWT_SECRET=
+JWT_EXPIRES_IN=1h
 ```
+
+`MONGO_URL` debe contener la conexión a MongoDB Atlas.
+
+Las credenciales reales no deben subirse al repositorio.
 
 ## Ejecutar el proyecto
 
@@ -64,46 +85,110 @@ Modo normal:
 npm start
 ```
 
-## Registro de usuarios
+El servidor funciona por defecto en:
 
-### Endpoint
-
-```http
-POST /api/sessions/register
+```text
+http://localhost:8080
 ```
 
-### Body esperado
+## Estructura principal
+
+```text
+src/
+├── app.js
+├── server.js
+├── config/
+│   ├── database.js
+│   └── env.js
+├── controllers/
+│   ├── events.controller.js
+│   ├── health.controller.js
+│   └── sessions.controller.js
+├── dao/
+│   └── users.dao.js
+├── middlewares/
+│   └── auth.middleware.js
+├── models/
+│   ├── Event.js
+│   └── User.js
+├── repositories/
+│   └── users.repository.js
+├── routes/
+│   ├── events.router.js
+│   ├── health.router.js
+│   └── sessions.router.js
+├── services/
+│   └── sessions.service.js
+└── utils/
+    ├── hash.js
+    └── jwt.js
+```
+
+## Rutas disponibles
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/health` | Verifica que el servidor esté funcionando |
+| GET | `/api/events` | Obtiene la lista de eventos |
+| POST | `/api/sessions/register` | Registra un nuevo usuario |
+| POST | `/api/sessions/login` | Inicia sesión y genera la cookie de autenticación |
+| GET | `/api/sessions/current` | Devuelve los datos del usuario autenticado |
+| POST | `/api/sessions/logout` | Cierra la sesión y elimina la cookie |
+
+---
+
+## GET /api/health
+
+Verifica que el servidor esté activo.
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "message": "Servidor activo"
+}
+```
+
+---
+
+## GET /api/events
+
+Obtiene los eventos disponibles.
+
+### Response
+
+```json
+{
+  "status": "success",
+  "payload": []
+}
+```
+
+---
+
+## POST /api/sessions/register
+
+Registra un nuevo usuario.
+
+### Request
 
 ```json
 {
   "first_name": "Ana",
   "last_name": "Perez",
-  "email": "Ana@Mail.com ",
+  "email": "ana@mail.com",
   "password": "Secreta123"
 }
 ```
 
-### Validaciones
-
-- `first_name`, `last_name`, `email` y `password` son obligatorios.
-- El email debe tener un formato válido.
-- El email se normaliza utilizando `trim()` y `toLowerCase()`.
-- La contraseña debe tener al menos 8 caracteres.
-- No se permiten emails duplicados.
-- El rol se asigna automáticamente como `user`.
-- El rol enviado desde el body no se utiliza.
-- La contraseña se guarda hasheada con bcrypt.
-- La respuesta nunca devuelve el campo `password`.
-
-### Registro exitoso
-
-Respuesta `201`:
+### Response exitosa
 
 ```json
 {
   "status": "success",
   "payload": {
-    "id": "665f2a...",
+    "id": "ID_DEL_USUARIO",
     "first_name": "Ana",
     "last_name": "Perez",
     "email": "ana@mail.com",
@@ -112,71 +197,212 @@ Respuesta `201`:
 }
 ```
 
-### Campos faltantes
+La contraseña nunca se devuelve en la respuesta.
 
-Respuesta `400`:
+### Validaciones
+
+- `first_name` es obligatorio.
+- `last_name` es obligatorio.
+- `email` es obligatorio.
+- `password` es obligatorio.
+- Se valida el formato del email.
+- El email se normaliza con `trim` y `lowercase`.
+- La contraseña debe tener al menos 8 caracteres.
+- No se permiten emails duplicados.
+- La contraseña se almacena hasheada con bcrypt.
+- El rol por defecto es `user`.
+- El rol no puede establecerse desde el registro público.
+
+---
+
+## POST /api/sessions/login
+
+Inicia sesión mediante email y contraseña.
+
+### Request
+
+```json
+{
+  "email": "ana@mail.com",
+  "password": "Secreta123"
+}
+```
+
+### Response exitosa
+
+```json
+{
+  "status": "success",
+  "message": "Login correcto"
+}
+```
+
+Cuando las credenciales son correctas se genera un JWT con:
+
+```text
+id
+email
+role
+```
+
+El JWT se guarda en una cookie llamada:
+
+```text
+currentUser
+```
+
+La cookie utiliza:
+
+- `httpOnly: true`
+- `sameSite: lax`
+- `maxAge: 3600000`
+- `secure: true` solamente en producción
+
+### Credenciales incorrectas
 
 ```json
 {
   "status": "error",
-  "message": "Faltan campos obligatorios"
+  "message": "Credenciales inválidas"
 }
 ```
 
-### Email inválido
+El sistema utiliza el mismo mensaje tanto si el email no existe como si la contraseña es incorrecta.
 
-Respuesta `400`:
+---
+
+## GET /api/sessions/current
+
+Ruta protegida que obtiene los datos del usuario autenticado.
+
+Requiere la cookie `currentUser` generada durante el login.
+
+### Response exitosa
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "id": "ID_DEL_USUARIO",
+    "email": "ana@mail.com",
+    "role": "user"
+  }
+}
+```
+
+No se devuelve la contraseña.
+
+### Sin autenticación
+
+Si la cookie no existe o el JWT es inválido, manipulado o expiró:
 
 ```json
 {
   "status": "error",
-  "message": "Email inválido"
+  "message": "No autenticado"
 }
 ```
 
-### Email duplicado
+HTTP Status:
 
-Respuesta `409`:
+```text
+401 Unauthorized
+```
+
+---
+
+## POST /api/sessions/logout
+
+Cierra la sesión eliminando la cookie `currentUser`.
+
+### Response
+
+```json
+{
+  "status": "success",
+  "message": "Sesión cerrada"
+}
+```
+
+Luego del logout, una nueva petición a:
+
+```text
+GET /api/sessions/current
+```
+
+devuelve:
 
 ```json
 {
   "status": "error",
-  "message": "El email ya está registrado"
+  "message": "No autenticado"
 }
 ```
 
-### Contraseña demasiado corta
+con código HTTP `401`.
 
-Respuesta `400`:
+## Flujo de autenticación
 
-```json
-{
-  "status": "error",
-  "message": "La contraseña debe tener al menos 8 caracteres"
-}
-```
-
-## Rutas disponibles
-
-```http
-GET /api/health
-GET /api/events
-POST /api/sessions/register
+```text
+Registro
+   ↓
+Login
+   ↓
+Generación del JWT
+   ↓
+Cookie currentUser
+   ↓
+GET /current
+   ↓
+Logout
+   ↓
+GET /current → 401
 ```
 
 ## Arquitectura
 
+La aplicación mantiene una estructura separada por responsabilidades:
+
 ```text
-src/
-├── config/
-├── routes/
-├── controllers/
-├── services/
-├── repositories/
-├── dao/
-├── models/
-├── middlewares/
-├── utils/
-├── app.js
-└── server.js
+Ruta
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+DAO
+↓
+Modelo
 ```
+
+La generación y validación de JWT se encuentra en:
+
+```text
+src/utils/jwt.js
+```
+
+El manejo de bcrypt se encuentra en:
+
+```text
+src/utils/hash.js
+```
+
+El middleware de autenticación se encuentra en:
+
+```text
+src/middlewares/auth.middleware.js
+```
+
+La conexión a MongoDB Atlas se realiza mediante Mongoose utilizando la variable de entorno `MONGO_URL`.
+
+## Seguridad
+
+- Las contraseñas se almacenan hasheadas con bcrypt.
+- Las respuestas no exponen contraseñas.
+- El JWT contiene solamente `id`, `email` y `role`.
+- `JWT_SECRET` se obtiene desde variables de entorno.
+- El JWT tiene expiración configurable.
+- La autenticación utiliza una cookie HTTP Only.
+- `.env` no se sube al repositorio.
