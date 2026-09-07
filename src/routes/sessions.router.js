@@ -8,6 +8,8 @@ import {
   logout
 } from '../controllers/sessions.controller.js'
 
+import { auth } from '../middlewares/auth.middleware.js'
+
 const router = Router()
 
 const finishAuthentication = (
@@ -91,27 +93,7 @@ router.post(
   login
 )
 
-router.get(
-  '/current',
-  (req, res, next) => {
-    passport.authenticate(
-      'current',
-      { session: false },
-      (error, user, info) => {
-        finishAuthentication(
-          req,
-          res,
-          next,
-          error,
-          user,
-          info,
-          'No autenticado'
-        )
-      }
-    )(req, res, next)
-  },
-  current
-)
+router.get('/current', auth, current)
 
 router.post('/logout', logout)
 
