@@ -8,6 +8,11 @@ import {
   updateEventStatus
 } from '../controllers/events.controller.js'
 
+import {
+  createTicket,
+  getEventTicketsController
+} from '../controllers/tickets.controller.js'
+
 import { auth } from '../middlewares/auth.middleware.js'
 import { authorizeRoles } from '../middlewares/authorize.middleware.js'
 import { authorizeEventOwnerOrAdmin } from '../middlewares/event-owner.middleware.js'
@@ -39,6 +44,19 @@ router.patch(
   authorizeRoles('organizer', 'admin'),
   authorizeEventOwnerOrAdmin,
   updateEventStatus
+)
+
+router.post(
+  '/:eid/tickets',
+  auth,
+  createTicket
+)
+
+router.get(
+  '/:eid/tickets',
+  auth,
+  authorizeRoles('organizer', 'admin'),
+  getEventTicketsController
 )
 
 export default router
