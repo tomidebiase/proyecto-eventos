@@ -1,12 +1,22 @@
 import {
-  findPublishedEvents,
+  findEvents,
+  countEvents,
   findEventById,
   createEvent,
   updateEventById
 } from '../dao/events.dao.js'
 
-export const getPublishedEvents = async () => {
-  return findPublishedEvents()
+export const getEvents = async (
+  filter,
+  sort,
+  skip,
+  limit
+) => {
+  return findEvents(filter, sort, skip, limit)
+}
+
+export const getEventsCount = async (filter) => {
+  return countEvents(filter)
 }
 
 export const getEventById = async (eventId) => {

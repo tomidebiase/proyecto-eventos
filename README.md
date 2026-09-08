@@ -2,22 +2,20 @@
 
 API REST desarrollada para el proyecto de Backend II.
 
-## Pre-entrega 5 — Roles y autorización
+## Pre-entrega 6 — Entidad Events y lógica de negocio
 
-En esta etapa se incorporó un sistema de autorización basado en roles.
+En esta etapa se desarrolló el CRUD de eventos incorporando:
 
-La API diferencia entre:
-
-- Usuario no autenticado → `401 Unauthorized`
-- Usuario autenticado sin permisos → `403 Forbidden`
-
-Los roles disponibles son:
-
-- `user`
-- `organizer`
-- `admin`
-
-El registro público siempre crea usuarios con rol `user`. El rol no puede definirse desde el body del registro.
+- Creación de eventos.
+- Listado con filtros.
+- Consulta por ID.
+- Modificación.
+- Cambio de estado y cancelación lógica.
+- Validaciones de negocio.
+- Autorización por roles.
+- Validación de propiedad del recurso.
+- Paginación.
+- Ordenamiento.
 
 ## Tecnologías
 
@@ -83,167 +81,105 @@ Modo normal:
 npm start
 ```
 
+## Modelo Event
+
+Los eventos contienen los siguientes campos:
+
+- `title`
+- `description`
+- `category`
+- `date`
+- `location`
+- `capacity`
+- `price`
+- `status`
+- `organizer`
+
+El campo `organizer` es una referencia `ObjectId` al modelo `User`.
+
+No se guarda el objeto completo del usuario dentro del evento.
+
+### Estados permitidos
+
+```text
+draft
+published
+cancelled
+finished
+```
+
+### Validaciones del modelo
+
+- `title` obligatorio.
+- `description` obligatorio.
+- `category` obligatorio.
+- `location` obligatorio.
+- `date` obligatorio.
+- `capacity` debe ser mayor a `0`.
+- `price` debe ser mayor o igual a `0`.
+- `organizer` obligatorio.
+
 ## Roles
+
+Los roles disponibles son:
+
+```text
+user
+organizer
+admin
+```
 
 ### user
 
-Puede:
+Puede consultar eventos.
 
-- Consultar eventos publicados.
-- Consultar su sesión mediante `/current`.
-
-No puede:
-
-- Crear eventos.
-- Modificar eventos.
-- Consultar todos los usuarios.
+No puede crear ni modificar eventos.
 
 ### organizer
 
 Puede:
 
-- Consultar eventos publicados.
 - Crear eventos.
 - Modificar sus propios eventos.
+- Cambiar el estado de sus propios eventos.
 
-No puede:
-
-- Modificar eventos de otros organizadores.
-- Consultar todos los usuarios.
+No puede modificar eventos ajenos.
 
 ### admin
 
 Puede:
 
-- Consultar eventos publicados.
 - Crear eventos.
 - Modificar cualquier evento.
-- Consultar todos los usuarios.
+- Cambiar el estado de cualquier evento.
 
 ## Matriz de permisos
 
 | Acción | user | organizer | admin |
 |---|---|---|---|
-| Consultar eventos publicados | ✅ | ✅ | ✅ |
+| Consultar eventos | ✅ | ✅ | ✅ |
+| Consultar evento por ID | ✅ | ✅ | ✅ |
 | Crear eventos | ❌ | ✅ | ✅ |
-| Modificar eventos propios | ❌ | ✅ | ✅ |
-| Modificar cualquier evento | ❌ | ❌ | ✅ |
-| Ver todos los usuarios | ❌ | ❌ | ✅ |
+| Modificar evento propio | ❌ | ✅ | ✅ |
+| Modificar evento ajeno | ❌ | ❌ | ✅ |
+| Cambiar estado propio | ❌ | ✅ | ✅ |
+| Cambiar estado de cualquier evento | ❌ | ❌ | ✅ |
 
-## Middlewares
+## Endpoints de eventos
 
-### Autenticación
+| Método | Ruta | Acceso |
+|---|---|---|
+| POST | `/api/events` | organizer / admin |
+| GET | `/api/events` | Público |
+| GET | `/api/events/:id` | Público |
+| PUT | `/api/events/:id` | Dueño / admin |
+| PATCH | `/api/events/:id/status` | Dueño / admin |
 
-Archivo:
+## POST /api/events
 
-```text
-src/middlewares/auth.middleware.js
-```
+Crea un evento.
 
-Se encarga de:
-
-- Leer y validar la autenticación mediante JWT.
-- Utilizar la estrategia `current` de Passport.
-- Dejar el usuario autenticado en `req.user`.
-- Responder `401` cuando no existe una sesión válida.
-
-### Autorización por roles
-
-Archivo:
-
-```text
-src/middlewares/authorize.middleware.js
-```
-
-Recibe los roles permitidos como parámetros.
-
-Ejemplo:
-
-```js
-authorizeRoles('organizer', 'admin')
-```
-
-Si el usuario está autenticado pero su rol no está permitido, responde:
-
-```json
-{
-  "status": "error",
-  "message": "No tenés permisos para realizar esta acción"
-}
-```
-
-con código HTTP:
-
-```text
-403
-```
-
-### Propiedad de eventos
-
-Archivo:
-
-```text
-src/middlewares/event-owner.middleware.js
-```
-
-Valida que:
-
-- Un `organizer` solo pueda modificar sus propios eventos.
-- Un `admin` pueda modificar cualquier evento.
-
-Si un organizer intenta modificar un evento ajeno, responde `403`.
-
-## Diferencia entre 401 y 403
-
-### 401 Unauthorized
-
-Se utiliza cuando el usuario no tiene una sesión válida.
-
-Ejemplo:
-
-```json
-{
-  "status": "error",
-  "message": "No autenticado"
-}
-```
-
-### 403 Forbidden
-
-Se utiliza cuando el usuario está autenticado pero no tiene permisos para realizar la acción.
-
-Ejemplo:
-
-```json
-{
-  "status": "error",
-  "message": "No tenés permisos para realizar esta acción"
-}
-```
-
-## Rutas
-
-| Método | Ruta | Acceso | Descripción |
-|---|---|---|---|
-| GET | `/api/health` | Público | Verifica que el servidor esté activo |
-| GET | `/api/events` | Público | Consulta eventos publicados |
-| POST | `/api/events` | organizer / admin | Crea un evento |
-| PUT | `/api/events/:eid` | organizer / admin | Modifica un evento con validación de propiedad |
-| POST | `/api/sessions/register` | Público | Registra un usuario |
-| POST | `/api/sessions/login` | Público | Inicia sesión |
-| GET | `/api/sessions/current` | Autenticado | Devuelve el usuario autenticado |
-| POST | `/api/sessions/logout` | Público | Cierra la sesión |
-| GET | `/api/users` | admin | Consulta todos los usuarios |
-
-## Crear evento
-
-Ruta:
-
-```text
-POST /api/events
-```
-
-Solo pueden acceder:
+Solo pueden acceder usuarios con rol:
 
 ```text
 organizer
@@ -254,45 +190,183 @@ Ejemplo:
 
 ```json
 {
-  "title": "Congreso Tech 2026",
-  "description": "Evento de tecnología",
-  "date": "2026-10-20",
+  "title": "Workshop Node",
+  "description": "Evento de programación",
+  "category": "workshop",
+  "date": "2026-12-15",
   "location": "Buenos Aires",
-  "capacity": 100,
-  "price": 0
+  "capacity": 50,
+  "price": 100,
+  "status": "published"
 }
 ```
 
-Un usuario con rol `user` recibe:
+El campo `organizer` no se recibe desde el body.
+
+Se asigna automáticamente desde:
+
+```text
+req.user
+```
+
+Respuesta exitosa:
 
 ```json
 {
-  "status": "error",
-  "message": "No tenés permisos para realizar esta acción"
+  "status": "success",
+  "payload": {
+    "id": "ID_DEL_EVENTO",
+    "title": "Workshop Node",
+    "organizer": "ID_DEL_USUARIO"
+  }
 }
 ```
 
 HTTP:
 
 ```text
-403
+201
 ```
 
-Un `organizer` o `admin` recibe una respuesta exitosa con código HTTP `201`.
+## GET /api/events
 
-## Modificar evento
+Lista eventos con soporte para filtros, paginación y ordenamiento.
 
-Ruta:
+### Filtros disponibles
 
 ```text
-PUT /api/events/:eid
+status
+category
+location
+dateFrom
+dateTo
 ```
 
-Un `organizer` puede modificar solamente eventos cuyo campo `organizer` corresponda a su usuario.
+Ejemplo:
 
-Un `admin` puede modificar cualquier evento.
+```text
+GET /api/events?status=published&category=workshop&location=Buenos Aires
+```
 
-Si un organizer intenta modificar un evento ajeno:
+### Rango de fechas
+
+```text
+GET /api/events?dateFrom=2026-10-01&dateTo=2026-12-31
+```
+
+### Paginación
+
+Parámetros:
+
+```text
+page
+limit
+```
+
+Ejemplo:
+
+```text
+GET /api/events?page=2&limit=5
+```
+
+### Ordenamiento
+
+Se utiliza el parámetro:
+
+```text
+sort
+```
+
+Campos permitidos:
+
+```text
+date
+title
+price
+capacity
+createdAt
+```
+
+Ejemplo ascendente:
+
+```text
+GET /api/events?sort=date
+```
+
+Ejemplo descendente:
+
+```text
+GET /api/events?sort=-date
+```
+
+### Ejemplo completo
+
+```text
+GET /api/events?status=published&category=workshop&page=1&limit=5&sort=date
+```
+
+Respuesta:
+
+```json
+{
+  "status": "success",
+  "data": [],
+  "page": 1,
+  "limit": 5,
+  "total": 0,
+  "totalPages": 0
+}
+```
+
+Los valores dependen de los eventos almacenados.
+
+## GET /api/events/:id
+
+Consulta un evento específico.
+
+Ejemplo:
+
+```text
+GET /api/events/ID_DEL_EVENTO
+```
+
+Si existe:
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "id": "ID_DEL_EVENTO",
+    "title": "Workshop Node"
+  }
+}
+```
+
+Si no existe:
+
+```json
+{
+  "status": "error",
+  "message": "Evento no encontrado"
+}
+```
+
+HTTP:
+
+```text
+404
+```
+
+## PUT /api/events/:id
+
+Permite modificar un evento.
+
+Puede hacerlo:
+
+- El `organizer` dueño del evento.
+- Un `admin`.
+
+Un organizer intentando modificar un evento ajeno recibe:
 
 ```json
 {
@@ -307,48 +381,63 @@ HTTP:
 403
 ```
 
-## Ruta administrativa
+El campo `organizer` no puede modificarse desde el body.
 
-Ruta:
+El campo `status` tampoco se modifica mediante este endpoint.
 
-```text
-GET /api/users
-```
+## PATCH /api/events/:id/status
 
-Solo puede acceder un usuario con rol:
+Permite cambiar el estado de un evento.
 
-```text
-admin
-```
-
-Un `organizer` o `user` recibe `403`.
-
-La respuesta exitosa no incluye contraseñas.
-
-## Current
-
-Ruta:
-
-```text
-GET /api/sessions/current
-```
-
-Requiere una sesión válida.
-
-Respuesta:
+Ejemplo:
 
 ```json
 {
-  "status": "success",
-  "payload": {
-    "id": "ID_DEL_USUARIO",
-    "email": "usuario@mail.com",
-    "role": "user"
-  }
+  "status": "cancelled"
 }
 ```
 
-Sin cookie válida:
+Cancelar un evento significa cambiar:
+
+```text
+status → cancelled
+```
+
+El evento no se elimina físicamente de MongoDB.
+
+## Reglas de negocio
+
+La lógica de negocio se encuentra en:
+
+```text
+src/services/events.service.js
+```
+
+Las principales reglas son:
+
+- No se permiten eventos con fecha pasada.
+- `capacity` debe ser mayor a `0`.
+- `price` no puede ser negativo.
+- Solo se permiten estados definidos.
+- No se puede crear un evento directamente como `cancelled` o `finished`.
+- Un evento cancelado no puede modificarse.
+- Un evento cancelado no puede volver a cambiar de estado.
+- No se puede publicar un evento finalizado.
+- No se puede publicar un evento cuya fecha ya pasó.
+- La cancelación es lógica y no elimina el documento.
+- El organizer se asigna desde el usuario autenticado.
+
+## Autenticación y autorización
+
+### Middleware de autenticación
+
+```text
+src/middlewares/auth.middleware.js
+```
+
+Valida JWT y cookie.
+
+Sin sesión válida:
 
 ```json
 {
@@ -363,86 +452,119 @@ HTTP:
 401
 ```
 
-## Passport.js
-
-Passport continúa centralizando las estrategias:
+### Middleware de roles
 
 ```text
-register
-login
-current
+src/middlewares/authorize.middleware.js
 ```
 
-Archivo:
+Si existe sesión pero el rol no tiene permiso:
+
+```json
+{
+  "status": "error",
+  "message": "No tenés permisos para realizar esta acción"
+}
+```
+
+HTTP:
 
 ```text
-src/config/passport.config.js
+403
 ```
 
-Passport valida la autenticación y deja el usuario disponible en `req.user`.
-
-El JWT continúa siendo generado por el controller luego de un login exitoso.
-
-## Estructura principal
+### Middleware de propiedad
 
 ```text
-src/
-├── app.js
-├── server.js
-├── config/
-│   ├── database.js
-│   ├── env.js
-│   └── passport.config.js
-├── controllers/
-│   ├── events.controller.js
-│   ├── health.controller.js
-│   ├── sessions.controller.js
-│   └── users.controller.js
-├── dao/
-│   ├── events.dao.js
-│   └── users.dao.js
-├── middlewares/
-│   ├── auth.middleware.js
-│   ├── authorize.middleware.js
-│   └── event-owner.middleware.js
-├── models/
-│   ├── Event.js
-│   └── User.js
-├── repositories/
-│   ├── events.repository.js
-│   └── users.repository.js
-├── routes/
-│   ├── events.router.js
-│   ├── health.router.js
-│   ├── sessions.router.js
-│   └── users.router.js
-├── services/
-│   ├── events.service.js
-│   └── users.service.js
-└── utils/
-    ├── hash.js
-    └── jwt.js
+src/middlewares/event-owner.middleware.js
 ```
+
+Valida que:
+
+- `organizer` solo modifique eventos propios.
+- `admin` pueda modificar cualquier evento.
+
+## Arquitectura
+
+La lógica está separada por responsabilidades:
+
+```text
+Route
+↓
+Middleware
+↓
+Controller
+↓
+Service
+↓
+Repository
+↓
+DAO
+↓
+Model
+```
+
+### DAO
+
+```text
+src/dao/events.dao.js
+```
+
+Realiza operaciones directamente con Mongoose.
+
+### Repository
+
+```text
+src/repositories/events.repository.js
+```
+
+Centraliza el acceso a datos del dominio de eventos.
+
+### Service
+
+```text
+src/services/events.service.js
+```
+
+Contiene las reglas de negocio.
+
+### Controller
+
+```text
+src/controllers/events.controller.js
+```
+
+Maneja únicamente request y response.
+
+### Routes
+
+```text
+src/routes/events.router.js
+```
+
+Define los endpoints y aplica middlewares reutilizables.
 
 ## Casos probados
 
 Se verificaron los siguientes casos:
 
-1. `POST /api/events` con rol `user` → `403`.
-2. `POST /api/events` con rol `organizer` → creación exitosa.
-3. `GET /api/users` con rol `organizer` → `403`.
-4. `GET /api/users` con rol `admin` → éxito.
-5. Ruta privada sin cookie → `401`.
-6. `organizer` intentando modificar evento ajeno → `403`.
+1. Crear evento con rol `user` → `403`.
+2. Crear evento con fecha pasada → error.
+3. Crear evento con `capacity: 0` → error.
+4. `organizer` modifica evento propio → éxito.
+5. `organizer` modifica evento ajeno → `403`.
+6. `admin` modifica evento de otro organizer → éxito.
+7. Cambiar estado de evento cancelado → error.
+8. Listar con filtros, paginación y ordenamiento → éxito.
+9. Consultar evento inexistente → `404`.
 
 ## Seguridad
 
-- Contraseñas hasheadas con bcrypt.
-- El registro público no permite elegir roles privilegiados.
-- JWT almacenado en cookie HTTP Only.
-- JWT contiene únicamente `id`, `email` y `role`.
-- Las rutas privadas requieren autenticación.
-- Los permisos se validan mediante middlewares reutilizables.
-- Se diferencia correctamente entre `401` y `403`.
-- Las respuestas de usuarios no incluyen `password`.
 - `.env` no se sube al repositorio.
+- `node_modules` no se sube.
+- Las contraseñas se almacenan con bcrypt.
+- JWT se almacena en cookie HTTP Only.
+- `organizer` no puede enviarse desde el body del evento.
+- Los permisos se validan mediante middlewares.
+- Se diferencia entre `401` y `403`.
+- Los eventos no se eliminan físicamente al cancelarlos.

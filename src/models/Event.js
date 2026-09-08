@@ -4,40 +4,60 @@ const eventSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
+
     description: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
+
     category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category'
+      type: String,
+      required: true,
+      trim: true
     },
+
     date: {
       type: Date,
       required: true
     },
+
     location: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
+
     capacity: {
       type: Number,
-      required: true
+      required: true,
+      min: 1
     },
+
     price: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
+
     status: {
       type: String,
-      enum: ['draft', 'published', 'cancelled', 'finished'],
+      enum: [
+        'draft',
+        'published',
+        'cancelled',
+        'finished'
+      ],
       default: 'draft'
     },
+
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
+      required: true
     }
   },
   {

@@ -2,7 +2,7 @@ import { getEventById } from '../repositories/events.repository.js'
 
 export const authorizeEventOwnerOrAdmin = async (req, res, next) => {
   try {
-    const event = await getEventById(req.params.eid)
+    const event = await getEventById(req.params.id)
 
     if (!event) {
       return res.status(404).json({
@@ -12,7 +12,6 @@ export const authorizeEventOwnerOrAdmin = async (req, res, next) => {
     }
 
     const isAdmin = req.user.role === 'admin'
-
     const isOwner =
       event.organizer?.toString() === req.user.id.toString()
 
@@ -26,7 +25,7 @@ export const authorizeEventOwnerOrAdmin = async (req, res, next) => {
     req.event = event
     next()
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       message: 'Error interno del servidor'
     })

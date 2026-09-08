@@ -1,16 +1,34 @@
 import {
-  getEvents,
+  listEvents,
+  getEvent,
   createNewEvent,
-  modifyEvent
+  modifyEvent,
+  changeEventStatus
 } from '../services/events.service.js'
 
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await getEvents()
+    const result = await listEvents(req.query)
 
     res.status(200).json({
       status: 'success',
-      payload: events
+      ...result
+    })
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      message: error.message || 'Error interno del servidor'
+    })
+  }
+}
+
+export const getEventById = async (req, res) => {
+  try {
+    const event = await getEvent(req.params.id)
+
+    res.status(200).json({
+      status: 'success',
+      payload: event
     })
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -22,7 +40,10 @@ export const getAllEvents = async (req, res) => {
 
 export const createEvent = async (req, res) => {
   try {
-    const event = await createNewEvent(req.body, req.user)
+    const event = await createNewEvent(
+      req.body,
+      req.user
+    )
 
     res.status(201).json({
       status: 'success',
@@ -39,9 +60,27 @@ export const createEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const event = await modifyEvent(
-      req.params.eid,
-      req.body,
-      req.user
+      req.params.id,
+      req.body
+    )
+
+    res.status(200).json({
+      status: 'success',
+      payload: event
+    })
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      message: error.message || 'Error interno del servidor'
+    })
+  }
+}
+
+export const updateEventStatus = async (req, res) => {
+  try {
+    const event = await changeEventStatus(
+      req.params.id,
+      req.body.status
     )
 
     res.status(200).json({
