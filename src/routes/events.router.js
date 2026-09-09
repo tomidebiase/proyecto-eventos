@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { getEvents } from '../controllers/events.controller.js'
+import { getAllEvents } from '../controllers/events.controller.js'
 
 const router = Router()
 
-router.get('/', getEvents)
+router.get('/', getAllEvents)
 
 export default router
