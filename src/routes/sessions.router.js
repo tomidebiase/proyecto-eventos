@@ -12,84 +12,65 @@ import { auth } from '../middlewares/auth.middleware.js'
 
 const router = Router()
 
-const finishAuthentication = (
-  req,
-  res,
-  next,
-  error,
-  user,
-  info,
-  fallbackMessage,
-  useStrategyMessage = false
-) => {
-  if (error) {
-    return res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
-  }
+const registerAuthentication = (req, res, next) => {
+  passport.authenticate(
+    'register',
+    { session: false },
+    (error, user, info) => {
+      if (error) {
+        return next(error)
+      }
 
-  if (!user) {
-    const statusCode = useStrategyMessage
-      ? info?.statusCode || 401
-      : 401
+      if (!user) {
+        const authError = new Error(
+          info?.message || 'Error al registrar usuario'
+        )
 
-    const message = useStrategyMessage
-      ? info?.message || fallbackMessage
-      : fallbackMessage
+        authError.statusCode = info?.statusCode || 401
 
-    return res.status(statusCode).json({
-      status: 'error',
-      message
-    })
-  }
+        return next(authError)
+      }
 
-  req.user = user
-  next()
+      req.user = user
+      next()
+    }
+  )(req, res, next)
+}
+
+const loginAuthentication = (req, res, next) => {
+  passport.authenticate(
+    'login',
+    { session: false },
+    (error, user) => {
+      if (error) {
+        return next(error)
+      }
+
+      if (!user) {
+        const authError = new Error(
+          'Credenciales inválidas'
+        )
+
+        authError.statusCode = 401
+
+        return next(authError)
+      }
+
+      req.user = user
+      next()
+    }
+  )(req, res, next)
 }
 
 router.post(
   '/register',
-  (req, res, next) => {
-    passport.authenticate(
-      'register',
-      { session: false },
-      (error, user, info) => {
-        finishAuthentication(
-          req,
-          res,
-          next,
-          error,
-          user,
-          info,
-          'Error al registrar usuario',
-          true
-        )
-      }
-    )(req, res, next)
-  },
+  registerAuthentication,
   register
 )
 
 router.post(
   '/login',
-  (req, res, next) => {
-    passport.authenticate(
-      'login',
-      { session: false },
-      (error, user, info) => {
-        finishAuthentication(
-          req,
-          res,
-          next,
-          error,
-          user,
-          info,
-          'Credenciales inválidas'
-        )
-      }
-    )(req, res, next)
-  },
+  loginAuthentication,
   login
 )
 

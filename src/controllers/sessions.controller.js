@@ -1,16 +1,15 @@
 import { generateToken } from '../utils/jwt.js'
 import { config } from '../config/env.js'
 
+import {
+  toRegisteredUserDTO,
+  toAuthenticatedUserDTO
+} from '../dto/user.dto.js'
+
 export const register = (req, res) => {
   res.status(201).json({
     status: 'success',
-    payload: {
-      id: req.user.id,
-      first_name: req.user.first_name,
-      last_name: req.user.last_name,
-      email: req.user.email,
-      role: req.user.role
-    }
+    payload: toRegisteredUserDTO(req.user)
   })
 }
 
@@ -37,11 +36,7 @@ export const login = (req, res) => {
 export const current = (req, res) => {
   res.status(200).json({
     status: 'success',
-    payload: {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role
-    }
+    payload: toAuthenticatedUserDTO(req.user)
   })
 }
 

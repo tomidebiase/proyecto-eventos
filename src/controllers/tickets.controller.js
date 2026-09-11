@@ -5,8 +5,10 @@ import {
   cancelTicket
 } from '../services/tickets.service.js'
 
-export const createTicket = async (req, res) => {
-  try {
+import { asyncHandler } from '../middlewares/async.middleware.js'
+
+export const createTicket = asyncHandler(
+  async (req, res) => {
     const ticket = await createNewTicket(
       req.params.eid,
       req.body.quantity,
@@ -17,32 +19,22 @@ export const createTicket = async (req, res) => {
       status: 'success',
       payload: ticket
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const getMyTicketsController = async (req, res) => {
-  try {
+export const getMyTicketsController = asyncHandler(
+  async (req, res) => {
     const tickets = await getMyTickets(req.user.id)
 
     res.status(200).json({
       status: 'success',
       payload: tickets
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const getEventTicketsController = async (req, res) => {
-  try {
+export const getEventTicketsController = asyncHandler(
+  async (req, res) => {
     const tickets = await getEventTickets(
       req.params.eid,
       req.user
@@ -52,16 +44,11 @@ export const getEventTicketsController = async (req, res) => {
       status: 'success',
       payload: tickets
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const cancelTicketController = async (req, res) => {
-  try {
+export const cancelTicketController = asyncHandler(
+  async (req, res) => {
     const ticket = await cancelTicket(
       req.params.tid,
       req.user
@@ -71,10 +58,5 @@ export const cancelTicketController = async (req, res) => {
       status: 'success',
       payload: ticket
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)

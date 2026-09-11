@@ -9,6 +9,7 @@ import usersRouter from './routes/users.router.js'
 import ticketsRouter from './routes/tickets.router.js'
 
 import { initializePassport } from './config/passport.config.js'
+import { errorHandler } from './middlewares/error.middleware.js'
 
 const app = express()
 
@@ -23,5 +24,7 @@ app.use('/api/events', eventsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/tickets', ticketsRouter)
+
+app.use(errorHandler)
 
 export default app

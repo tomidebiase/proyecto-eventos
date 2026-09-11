@@ -6,40 +6,32 @@ import {
   changeEventStatus
 } from '../services/events.service.js'
 
-export const getAllEvents = async (req, res) => {
-  try {
+import { asyncHandler } from '../middlewares/async.middleware.js'
+
+export const getAllEvents = asyncHandler(
+  async (req, res) => {
     const result = await listEvents(req.query)
 
     res.status(200).json({
       status: 'success',
       ...result
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const getEventById = async (req, res) => {
-  try {
+export const getEventById = asyncHandler(
+  async (req, res) => {
     const event = await getEvent(req.params.id)
 
     res.status(200).json({
       status: 'success',
       payload: event
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const createEvent = async (req, res) => {
-  try {
+export const createEvent = asyncHandler(
+  async (req, res) => {
     const event = await createNewEvent(
       req.body,
       req.user
@@ -49,16 +41,11 @@ export const createEvent = async (req, res) => {
       status: 'success',
       payload: event
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const updateEvent = async (req, res) => {
-  try {
+export const updateEvent = asyncHandler(
+  async (req, res) => {
     const event = await modifyEvent(
       req.params.id,
       req.body
@@ -68,16 +55,11 @@ export const updateEvent = async (req, res) => {
       status: 'success',
       payload: event
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)
 
-export const updateEventStatus = async (req, res) => {
-  try {
+export const updateEventStatus = asyncHandler(
+  async (req, res) => {
     const event = await changeEventStatus(
       req.params.id,
       req.body.status
@@ -87,10 +69,5 @@ export const updateEventStatus = async (req, res) => {
       status: 'success',
       payload: event
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)

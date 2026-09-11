@@ -6,6 +6,11 @@ import {
   updateEvent
 } from '../repositories/events.repository.js'
 
+import {
+  toEventDTO,
+  toEventListDTO
+} from '../dto/event.dto.js'
+
 const validStatuses = [
   'draft',
   'published',
@@ -124,7 +129,7 @@ export const listEvents = async (query) => {
   ])
 
   return {
-    data,
+    data: toEventListDTO(data),
     page: pageNumber,
     limit: limitNumber,
     total,
@@ -141,7 +146,7 @@ export const getEvent = async (eventId) => {
     throw error
   }
 
-  return event
+  return toEventDTO(event)
 }
 
 export const createNewEvent = async (eventData, user) => {
@@ -215,7 +220,7 @@ export const createNewEvent = async (eventData, user) => {
     throw error
   }
 
-  return saveEvent({
+  const event = await saveEvent({
     title: title.trim(),
     description: description.trim(),
     category: category.trim(),
@@ -226,6 +231,8 @@ export const createNewEvent = async (eventData, user) => {
     status,
     organizer: user.id
   })
+
+  return toEventDTO(event)
 }
 
 export const modifyEvent = async (
@@ -292,7 +299,12 @@ export const modifyEvent = async (
     safeUpdate.date = newDate
   }
 
-  return updateEvent(eventId, safeUpdate)
+  const updatedEvent = await updateEvent(
+    eventId,
+    safeUpdate
+  )
+
+  return toEventDTO(updatedEvent)
 }
 
 export const changeEventStatus = async (
@@ -335,7 +347,9 @@ export const changeEventStatus = async (
     throw error
   }
 
-  return updateEvent(eventId, {
+  const updatedEvent = await updateEvent(eventId, {
     status: newStatus
   })
+
+  return toEventDTO(updatedEvent)
 }

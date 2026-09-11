@@ -1,17 +1,13 @@
 import { getUsers } from '../services/users.service.js'
+import { asyncHandler } from '../middlewares/async.middleware.js'
 
-export const getAllUsers = async (req, res) => {
-  try {
+export const getAllUsers = asyncHandler(
+  async (req, res) => {
     const users = await getUsers()
 
     res.status(200).json({
       status: 'success',
       payload: users
     })
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      status: 'error',
-      message: error.message || 'Error interno del servidor'
-    })
   }
-}
+)

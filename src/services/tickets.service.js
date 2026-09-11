@@ -12,6 +12,11 @@ import {
   updateTicket
 } from '../repositories/tickets.repository.js'
 
+import {
+  toTicketDTO,
+  toTicketListDTO
+} from '../dto/ticket.dto.js'
+
 import { sendTicketConfirmationEmail } from './mail.service.js'
 
 export const createNewTicket = async (
@@ -96,11 +101,13 @@ export const createNewTicket = async (
     ticket
   })
 
-  return ticket
+  return toTicketDTO(ticket)
 }
 
 export const getMyTickets = async (userId) => {
-  return getTicketsByUser(userId)
+  const tickets = await getTicketsByUser(userId)
+
+  return toTicketListDTO(tickets)
 }
 
 export const getEventTickets = async (
@@ -128,7 +135,9 @@ export const getEventTickets = async (
     throw error
   }
 
-  return getTicketsByEvent(eventId)
+  const tickets = await getTicketsByEvent(eventId)
+
+  return toTicketListDTO(tickets)
 }
 
 export const cancelTicket = async (
@@ -164,8 +173,10 @@ export const cancelTicket = async (
     throw error
   }
 
-  return updateTicket(ticketId, {
+  const updatedTicket = await updateTicket(ticketId, {
     status: 'cancelled',
     cancelledAt: new Date()
   })
+
+  return toTicketDTO(updatedTicket)
 }
