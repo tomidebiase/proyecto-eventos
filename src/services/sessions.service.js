@@ -8,6 +8,8 @@ import {
   isValidPassword
 } from '../utils/hash.js'
 
+import { generateToken } from '../utils/jwt.js'
+
 export const registerUser = async ({
   first_name,
   last_name,
@@ -87,4 +89,12 @@ export const loginUser = async ({
   }
 
   return user
+}
+
+export const createSessionToken = (user) => {
+  return generateToken({
+    id: user.id,
+    email: user.email,
+    role: user.role
+  })
 }

@@ -1,5 +1,6 @@
-import { generateToken } from '../utils/jwt.js'
 import { config } from '../config/env.js'
+
+import { createSessionToken } from '../services/sessions.service.js'
 
 import {
   toRegisteredUserDTO,
@@ -14,11 +15,7 @@ export const register = (req, res) => {
 }
 
 export const login = (req, res) => {
-  const token = generateToken({
-    id: req.user.id,
-    email: req.user.email,
-    role: req.user.role
-  })
+  const token = createSessionToken(req.user)
 
   res.cookie('currentUser', token, {
     httpOnly: true,
