@@ -1,105 +1,56 @@
-# Pre-entrega 8 - Arquitectura con DAO, Repository y DTO
+# API Backend - Plataforma de Eventos e Inscripciones
 
-## Plataforma de Eventos e Inscripciones
+Proyecto final del curso Backend II.
 
-En esta pre-entrega se refactorizó la API de la Plataforma de Eventos e Inscripciones para implementar una arquitectura profesional basada en capas.
+La aplicación es una API para gestionar eventos e inscripciones. Permite registrar usuarios, iniciar sesión, crear eventos según el rol, inscribirse a eventos, controlar cupos, cancelar tickets y enviar un mail de confirmación.
 
-El objetivo principal fue separar claramente las responsabilidades entre:
+El proyecto fue realizado con una arquitectura por capas para separar el acceso a datos, la lógica de negocio y las respuestas de la API.
 
-```text
-Routes
-   ↓
-Controllers / Middlewares
-   ↓
-Services
-   ↓
-Repositories
-   ↓
-DAO
-   ↓
-Models
-   ↓
-MongoDB
-```
-
-Además, se incorporaron DTOs para controlar la información que se devuelve desde la API y evitar la exposición de datos sensibles.
-
-La API mantiene el mismo comportamiento externo de las entregas anteriores.
-
-Continúan funcionando:
-
-- registro
-- login
-- autenticación mediante JWT
-- autorización por roles
-- eventos
-- tickets
-- inscripciones
-- control de cupos
-- cancelaciones
-- permisos sobre recursos propios
-- notificaciones por email
-
----
-
-# Tecnologías utilizadas
+## Tecnologías
 
 - Node.js
 - Express
 - MongoDB
 - Mongoose
 - Passport
-- Passport Local
-- Passport JWT
-- JSON Web Token
+- JWT
 - bcrypt
 - Nodemailer
 - dotenv
 
----
+## Instalación
 
-# Instalación
-
-Clonar el repositorio e instalar las dependencias:
+Instalar dependencias:
 
 ```bash
 npm install
 ```
 
-Crear un archivo:
+Crear un archivo `.env` tomando como referencia `.env.example`.
 
-```text
-.env
-```
-
-tomando como referencia:
-
-```text
-.env.example
-```
-
-Luego iniciar el servidor en modo desarrollo:
+Para iniciar en desarrollo:
 
 ```bash
 npm run dev
 ```
 
-El servidor se ejecuta por defecto en:
+Para iniciar normalmente:
+
+```bash
+npm start
+```
+
+Por defecto el servidor funciona en:
 
 ```text
 http://localhost:8080
 ```
 
----
-
-# Variables de entorno
-
-Ejemplo de configuración:
+## Variables de entorno
 
 ```env
 PORT=8080
 NODE_ENV=development
-
 MONGO_URL=
 
 JWT_SECRET=
@@ -112,588 +63,64 @@ MAIL_PASS=
 MAIL_FROM=
 ```
 
-Las credenciales reales solamente deben existir dentro de:
+Las credenciales reales se guardan solamente en `.env`.
+
+## Arquitectura
+
+El proyecto está separado en las siguientes capas:
 
 ```text
-.env
+routes
+controllers
+services
+repositories
+dao
+dto
+models
+middlewares
+utils
+config
 ```
 
-El archivo `.env` nunca debe subirse al repositorio.
-
----
-
-# Arquitectura implementada
-
-La aplicación utiliza una arquitectura por capas.
+El flujo principal es:
 
 ```text
-Request
-   ↓
 Route
-   ↓
-Controller / Middleware
-   ↓
+  ↓
+Controller
+  ↓
 Service
-   ↓
+  ↓
 Repository
-   ↓
+  ↓
 DAO
-   ↓
-Mongoose Model
-   ↓
+  ↓
+Model
+  ↓
 MongoDB
 ```
 
-Cada capa tiene una responsabilidad específica.
+Los modelos de Mongoose solamente se importan desde los DAO.
 
----
+Los services contienen la lógica de negocio y utilizan repositories.
 
-# Models
+Los controllers reciben la petición, llaman al service correspondiente y devuelven la respuesta.
 
-Los modelos definen la estructura de los documentos almacenados en MongoDB.
+También se utilizan DTO para controlar los datos que devuelve la API.
 
-Se utilizan las siguientes entidades principales:
+## Usuarios y autenticación
 
-```text
-User
-Event
-Ticket
-```
-
-Ubicación:
+El modelo User contiene:
 
 ```text
-src/models/
-```
-
-Archivos principales:
-
-```text
-src/models/User.js
-src/models/Event.js
-src/models/Ticket.js
-```
-
-Los modelos de Mongoose solamente son importados directamente por los DAO.
-
----
-
-# DAO
-
-Los DAO son la única capa que accede directamente a los modelos de Mongoose.
-
-Ubicación:
-
-```text
-src/dao/
-```
-
-Archivos:
-
-```text
-src/dao/users.dao.js
-src/dao/events.dao.js
-src/dao/tickets.dao.js
-```
-
-Sus responsabilidades incluyen operaciones de acceso a datos como:
-
-```text
-find
-findOne
-findById
-create
-update
-countDocuments
-aggregate
-populate
-```
-
-Ejemplo de flujo:
-
-```text
-TicketDAO
-   ↓
-TicketModel
-   ↓
-MongoDB
-```
-
-Los controllers y services nunca importan modelos directamente.
-
----
-
-# Repository
-
-Los repositories utilizan los DAO correspondientes.
-
-Ubicación:
-
-```text
-src/repositories/
-```
-
-Archivos:
-
-```text
-src/repositories/users.repository.js
-src/repositories/events.repository.js
-src/repositories/tickets.repository.js
-```
-
-Los repositories funcionan como capa intermedia entre los services y el acceso directo a datos.
-
-Ejemplos de operaciones:
-
-```text
-getUserByEmail
-saveUser
-getEventById
-getEvents
-saveEvent
-getActiveTicketByUserAndEvent
-getReservedQuantityByEvent
-getTicketsByUser
-updateTicket
-```
-
-Los repositories no importan modelos de Mongoose.
-
----
-
-# Services
-
-La lógica de negocio se concentra en los services.
-
-Ubicación:
-
-```text
-src/services/
-```
-
-Principales archivos:
-
-```text
-src/services/sessions.service.js
-src/services/users.service.js
-src/services/events.service.js
-src/services/tickets.service.js
-src/services/authorization.service.js
-src/services/mail.service.js
-```
-
-Los services consumen repositories.
-
-No acceden directamente a DAO ni a modelos de Mongoose.
-
----
-
-# Sessions Service
-
-Archivo:
-
-```text
-src/services/sessions.service.js
-```
-
-Contiene la lógica relacionada con:
-
-- validación de registro
-- normalización del email
-- validación del formato del email
-- validación de contraseña
-- detección de email duplicado
-- generación del hash de contraseña
-- validación de credenciales durante login
-
-Passport delega esta lógica al service.
-
-El flujo es:
-
-```text
-Passport
-   ↓
-Sessions Service
-   ↓
-User Repository
-   ↓
-User DAO
-   ↓
-User Model
-```
-
----
-
-# Events Service
-
-Archivo:
-
-```text
-src/services/events.service.js
-```
-
-Contiene la lógica relacionada con:
-
-- creación de eventos
-- validación de campos obligatorios
-- validación de fechas
-- validación de capacidad
-- validación de precio
-- validación de estados
-- modificación de eventos
-- cambios de estado
-- filtros
-- paginación
-- ordenamiento
-
-Los controllers no realizan estas validaciones.
-
----
-
-# Tickets Service
-
-Archivo:
-
-```text
-src/services/tickets.service.js
-```
-
-Contiene la lógica relacionada con:
-
-- inscripción a eventos
-- validación del evento
-- validación de estado
-- validación de fecha
-- validación de cantidad
-- detección de inscripciones duplicadas
-- cálculo de cupos
-- generación del ticket
-- cancelación de tickets
-- permisos sobre tickets
-- envío del email de confirmación
-
----
-
-# Authorization Service
-
-Archivo:
-
-```text
-src/services/authorization.service.js
-```
-
-Contiene reglas relacionadas con la propiedad de recursos.
-
-Por ejemplo:
-
-```text
-organizer dueño del evento
-o
-admin
-```
-
-El middleware de autorización delega la validación al service en lugar de consultar directamente el repository.
-
-Flujo:
-
-```text
-Middleware
-   ↓
-Authorization Service
-   ↓
-Event Repository
-   ↓
-Event DAO
-   ↓
-Event Model
-```
-
----
-
-# Controllers
-
-Los controllers se encargan solamente de coordinar:
-
-```text
-request
-↓
-service
-↓
-response
-```
-
-Ubicación:
-
-```text
-src/controllers/
-```
-
-Archivos principales:
-
-```text
-src/controllers/sessions.controller.js
-src/controllers/events.controller.js
-src/controllers/tickets.controller.js
-src/controllers/users.controller.js
-```
-
-Los controllers:
-
-- extraen información de `req.body`
-- extraen parámetros de `req.params`
-- extraen filtros de `req.query`
-- llaman al service correspondiente
-- devuelven la respuesta HTTP
-
-No acceden directamente a MongoDB.
-
-No importan modelos.
-
-No calculan cupos.
-
-No validan estados de negocio.
-
-No resuelven reglas de propiedad de recursos.
-
----
-
-# Manejo de funciones asincrónicas
-
-Se agregó:
-
-```text
-src/middlewares/async.middleware.js
-```
-
-Este middleware permite enviar automáticamente los errores producidos por controllers asincrónicos al middleware centralizado de errores.
-
-De esta forma se evita repetir bloques `try/catch` en cada controller.
-
----
-
-# DTO
-
-Se incorporó una capa DTO para controlar qué información sale de la aplicación.
-
-Ubicación:
-
-```text
-src/dto/
-```
-
-Archivos:
-
-```text
-src/dto/user.dto.js
-src/dto/event.dto.js
-src/dto/ticket.dto.js
-```
-
----
-
-# User DTO
-
-Archivo:
-
-```text
-src/dto/user.dto.js
-```
-
-Controla las respuestas relacionadas con usuarios.
-
-Se utilizan DTOs específicos para:
-
-```text
-usuario
-usuario registrado
-usuario autenticado
-```
-
-El campo:
-
-```text
-password
-```
-
-nunca forma parte de una respuesta pública.
-
-Ni siquiera se devuelve la contraseña hasheada.
-
----
-
-# Usuario autenticado
-
-La ruta:
-
-```http
-GET /api/sessions/current
-```
-
-devuelve únicamente:
-
-```json
-{
-  "id": "USER_ID",
-  "email": "usuario@example.com",
-  "role": "user"
-}
-```
-
-Nunca devuelve:
-
-```text
-password
-```
-
----
-
-# Event DTO
-
-Archivo:
-
-```text
-src/dto/event.dto.js
-```
-
-Controla las respuestas correspondientes a eventos.
-
-Puede manejar tanto referencias mediante ObjectId como documentos relacionados poblados.
-
-Si el organizer se encuentra poblado, sus datos también pasan por el User DTO.
-
-De esta forma no se exponen campos sensibles del usuario relacionado.
-
----
-
-# Ticket DTO
-
-Archivo:
-
-```text
-src/dto/ticket.dto.js
-```
-
-Controla las respuestas correspondientes a tickets e inscripciones.
-
-Maneja:
-
-```text
-user
-event
-status
-quantity
-reservationCode
-cancelledAt
-createdAt
-updatedAt
-```
-
-Si una relación viene mediante `populate`, el documento relacionado también pasa por el DTO correspondiente.
-
-Esto evita exponer accidentalmente información sensible.
-
----
-
-# Populate de tickets
-
-La consulta:
-
-```http
-GET /api/tickets/my-tickets
-```
-
-utiliza `populate` para agregar información básica del evento.
-
-Actualmente se incluyen solamente:
-
-```text
-title
-date
-location
-```
-
-No se expone información sensible del usuario.
-
-Ejemplo:
-
-```json
-{
-  "user": "USER_ID",
-  "event": {
-    "_id": "EVENT_ID",
-    "title": "Evento Pre 8",
-    "date": "2026-12-20T20:00:00.000Z",
-    "location": "Buenos Aires"
-  }
-}
-```
-
----
-
-# Autenticación
-
-La aplicación utiliza Passport.
-
-Las estrategias se encuentran centralizadas en:
-
-```text
-src/config/passport.config.js
-```
-
-Se utilizan:
-
-```text
-register
-login
-current
-```
-
-Passport no contiene directamente la lógica de acceso a datos.
-
-Las estrategias de registro y login delegan la lógica al:
-
-```text
-Sessions Service
-```
-
----
-
-# JWT
-
-Después de un login correcto se genera un JWT.
-
-El token contiene:
-
-```text
-id
+first_name
+last_name
 email
+password
 role
 ```
 
-El JWT se guarda dentro de una cookie:
-
-```text
-currentUser
-```
-
-Configurada con:
-
-```text
-httpOnly
-sameSite=lax
-```
-
-y:
-
-```text
-secure=true
-```
-
-cuando la aplicación se encuentra en producción.
-
----
-
-# Roles
+La contraseña se guarda hasheada utilizando bcrypt.
 
 Los roles disponibles son:
 
@@ -703,328 +130,15 @@ organizer
 admin
 ```
 
-El rol por defecto al registrarse públicamente es:
+Cuando un usuario se registra públicamente siempre se crea como:
 
 ```text
 user
 ```
 
-El registro público no permite asignarse automáticamente los roles:
+El campo `role` enviado desde el body no permite que alguien se registre directamente como organizer o admin.
 
-```text
-organizer
-admin
-```
-
----
-
-# Permisos
-
-## user
-
-Puede:
-
-- registrarse
-- iniciar sesión
-- consultar eventos
-- inscribirse a eventos publicados
-- consultar sus tickets
-- cancelar sus propios tickets
-
-No puede crear eventos.
-
----
-
-## organizer
-
-Puede:
-
-- realizar las acciones de un usuario autenticado
-- crear eventos
-- modificar sus propios eventos
-- cambiar el estado de sus propios eventos
-- consultar tickets de sus propios eventos
-
-No puede modificar eventos pertenecientes a otro organizer.
-
----
-
-## admin
-
-Puede:
-
-- acceder a todos los usuarios
-- crear eventos
-- modificar cualquier evento
-- consultar tickets de eventos
-- cancelar tickets cuando corresponda
-- administrar recursos protegidos
-
----
-
-# Eventos
-
-## Listar eventos
-
-```http
-GET /api/events
-```
-
-Permite utilizar filtros, paginación y ordenamiento.
-
----
-
-## Obtener evento
-
-```http
-GET /api/events/:id
-```
-
----
-
-## Crear evento
-
-```http
-POST /api/events
-```
-
-Roles permitidos:
-
-```text
-organizer
-admin
-```
-
-Ejemplo:
-
-```json
-{
-  "title": "Evento",
-  "description": "Descripción",
-  "category": "Tecnologia",
-  "date": "2026-12-20T20:00:00.000Z",
-  "location": "Buenos Aires",
-  "capacity": 50,
-  "price": 1000,
-  "status": "published"
-}
-```
-
----
-
-## Modificar evento
-
-```http
-PUT /api/events/:id
-```
-
-Puede modificar:
-
-```text
-organizer dueño del evento
-admin
-```
-
----
-
-## Cambiar estado de evento
-
-```http
-PATCH /api/events/:id/status
-```
-
-Puede modificar:
-
-```text
-organizer dueño del evento
-admin
-```
-
----
-
-# Tickets e inscripciones
-
-## Crear inscripción
-
-```http
-POST /api/events/:eid/tickets
-```
-
-Requiere autenticación.
-
-Ejemplo:
-
-```json
-{
-  "quantity": 1
-}
-```
-
-Antes de generar un ticket se valida:
-
-- que el evento exista
-- que esté publicado
-- que no haya finalizado
-- que la cantidad sea válida
-- que existan cupos suficientes
-- que el usuario no tenga otra inscripción activa para ese evento
-
----
-
-# Control de cupos
-
-La capacidad disponible se calcula mediante:
-
-```text
-capacidad del evento - cantidad reservada
-```
-
-La cantidad reservada se obtiene sumando:
-
-```text
-quantity
-```
-
-de todos los tickets activos.
-
-Los tickets con:
-
-```text
-status = cancelled
-```
-
-no ocupan cupos.
-
----
-
-# Inscripciones duplicadas
-
-Cada usuario puede tener solamente:
-
-```text
-una inscripción activa por evento
-```
-
-Si intenta crear otra inscripción activa se devuelve:
-
-```http
-409 Conflict
-```
-
-con el mensaje:
-
-```text
-Ya tenés una inscripción activa para este evento
-```
-
-Si el ticket anterior fue cancelado, puede volver a inscribirse mientras existan cupos.
-
----
-
-# Consultar mis tickets
-
-```http
-GET /api/tickets/my-tickets
-```
-
-Requiere autenticación.
-
-Devuelve exclusivamente los tickets pertenecientes al usuario autenticado.
-
----
-
-# Consultar tickets de un evento
-
-```http
-GET /api/events/:eid/tickets
-```
-
-Acceso:
-
-```text
-organizer dueño del evento
-admin
-```
-
----
-
-# Cancelar ticket
-
-```http
-PATCH /api/tickets/:tid/cancel
-```
-
-Puede cancelar:
-
-```text
-dueño del ticket
-admin
-```
-
-La cancelación es lógica.
-
-El documento no se elimina de MongoDB.
-
-Se modifica:
-
-```text
-status = cancelled
-cancelledAt = fecha actual
-```
-
----
-
-# Notificaciones por email
-
-Después de crear correctamente una inscripción se envía un email de confirmación mediante Nodemailer.
-
-Configuración:
-
-```text
-src/config/mailer.js
-```
-
-Servicio:
-
-```text
-src/services/mail.service.js
-```
-
-El email contiene:
-
-- nombre del evento
-- fecha
-- lugar
-- cantidad reservada
-- código de reserva
-
-Las credenciales de email se configuran mediante variables de entorno.
-
----
-
-# Usuarios
-
-Existe una ruta administrativa para consultar usuarios:
-
-```http
-GET /api/users
-```
-
-Acceso:
-
-```text
-admin
-```
-
-Las respuestas pasan por User DTO.
-
-El campo `password` nunca se devuelve.
-
----
-
-# Sessions
-
-## Registro
+### Registro
 
 ```http
 POST /api/sessions/register
@@ -1041,51 +155,21 @@ Ejemplo:
 }
 ```
 
-Respuesta exitosa:
-
-```http
-201 Created
-```
-
-El password nunca se incluye en la respuesta.
-
----
-
-# Login
+### Login
 
 ```http
 POST /api/sessions/login
 ```
 
-Ejemplo:
+Si las credenciales son correctas se genera un JWT y se guarda en una cookie `httpOnly`.
 
-```json
-{
-  "email": "juan@example.com",
-  "password": "Password123"
-}
-```
-
-Respuesta:
-
-```json
-{
-  "status": "success",
-  "message": "Login correcto"
-}
-```
-
----
-
-# Current
+### Usuario actual
 
 ```http
 GET /api/sessions/current
 ```
 
-Requiere cookie de autenticación.
-
-Respuesta:
+Devuelve:
 
 ```json
 {
@@ -1098,522 +182,438 @@ Respuesta:
 }
 ```
 
-No devuelve password.
+Nunca se devuelve el password.
 
----
-
-# Logout
+### Logout
 
 ```http
 POST /api/sessions/logout
 ```
 
-Elimina la cookie:
+Elimina la cookie de autenticación.
+
+## Passport
+
+Se utilizan tres estrategias:
 
 ```text
-currentUser
+register
+login
+current
 ```
 
----
-
-# Manejo centralizado de errores
-
-Se agregó:
+La configuración se encuentra en:
 
 ```text
-src/middlewares/error.middleware.js
+src/config/passport.config.js
 ```
 
-Los errores generados por services y controllers terminan en este middleware.
+La lógica de registro y login está en `sessions.service.js`.
 
-Formato:
+## Roles y permisos
+
+### user
+
+Puede:
+
+- ver eventos
+- inscribirse
+- consultar sus tickets
+- cancelar sus propios tickets
+
+### organizer
+
+Además puede:
+
+- crear eventos
+- modificar sus propios eventos
+- cambiar el estado de sus eventos
+- consultar las inscripciones de sus eventos
+
+### admin
+
+Puede administrar recursos propios y ajenos y acceder al listado de usuarios.
+
+Si un usuario no está autenticado se devuelve:
+
+```text
+401
+```
+
+Si está autenticado pero no tiene permisos:
+
+```text
+403
+```
+
+## Eventos
+
+El modelo Event contiene:
+
+```text
+title
+description
+category
+date
+location
+capacity
+price
+status
+organizer
+```
+
+Los estados posibles son:
+
+```text
+draft
+published
+cancelled
+finished
+```
+
+`organizer` es una referencia al usuario creador del evento.
+
+### Listar eventos
+
+```http
+GET /api/events
+```
+
+Se pueden utilizar filtros como:
+
+```text
+status
+category
+location
+dateFrom
+dateTo
+```
+
+También se puede usar paginación y ordenamiento:
+
+```text
+page
+limit
+sort
+```
+
+Ejemplo:
+
+```http
+GET /api/events?status=published&page=2&limit=5
+```
+
+La respuesta incluye:
 
 ```json
 {
-  "status": "error",
-  "message": "Descripción del error"
+  "status": "success",
+  "data": [],
+  "page": 2,
+  "limit": 5,
+  "total": 5,
+  "totalPages": 1
 }
 ```
 
----
+### Obtener evento
 
-# Códigos HTTP utilizados
-
-La API distingue correctamente:
-
-```text
-400 Bad Request
+```http
+GET /api/events/:id
 ```
 
-Datos inválidos o reglas de negocio incorrectas.
+### Crear evento
 
-```text
-401 Unauthorized
+```http
+POST /api/events
 ```
 
-Usuario no autenticado o credenciales inválidas.
+Solo pueden hacerlo:
 
 ```text
-403 Forbidden
+organizer
+admin
 ```
 
-Usuario autenticado pero sin permisos.
+Ejemplo:
+
+```json
+{
+  "title": "Congreso Tech",
+  "description": "Evento de tecnología",
+  "category": "Tecnologia",
+  "date": "2026-12-20T20:00:00.000Z",
+  "location": "Buenos Aires",
+  "capacity": 50,
+  "price": 1000,
+  "status": "published"
+}
+```
+
+### Modificar evento
+
+```http
+PUT /api/events/:id
+```
+
+Puede modificarlo el organizer dueño o un admin.
+
+### Cambiar estado
+
+```http
+PATCH /api/events/:id/status
+```
+
+Ejemplo:
+
+```json
+{
+  "status": "cancelled"
+}
+```
+
+Entre las validaciones se controla:
+
+- que la fecha sea futura
+- que capacity sea mayor a 0
+- que price no sea negativo
+- que el estado sea válido
+- que no se modifique un evento cancelado
+
+## Tickets e inscripciones
+
+El modelo Ticket tiene referencias a:
 
 ```text
-404 Not Found
+user
+event
 ```
 
-Recurso inexistente.
+y además:
+
+```text
+status
+quantity
+reservationCode
+cancelledAt
+createdAt
+```
+
+Los estados posibles son:
+
+```text
+confirmed
+pending
+cancelled
+```
+
+### Inscribirse a un evento
+
+```http
+POST /api/events/:eid/tickets
+```
+
+Ejemplo:
+
+```json
+{
+  "quantity": 1
+}
+```
+
+Antes de crear una inscripción se valida:
+
+- que el evento exista
+- que esté publicado
+- que no haya finalizado
+- que haya cupos
+- que quantity sea válido
+- que el usuario no tenga otra inscripción activa al mismo evento
+
+Si ya existe una inscripción activa:
 
 ```text
 409 Conflict
 ```
 
-Conflictos como email o inscripción duplicada.
+Si no hay cupos:
 
 ```text
-500 Internal Server Error
+409 Conflict
 ```
 
-Errores internos inesperados.
+## Control de cupos
 
-Los errores de negocio no se devuelven como `500`.
+El cupo disponible se calcula restando a la capacidad del evento la cantidad reservada en tickets activos.
 
----
+Los tickets cancelados no cuentan como cupo ocupado.
 
-# Ejemplo de flujo de inscripción
+Por eso, cuando un ticket se cancela, ese lugar vuelve a quedar disponible.
 
-```text
-Usuario autenticado
-        ↓
-POST /api/events/:eid/tickets
-        ↓
-Tickets Controller
-        ↓
-Tickets Service
-        ↓
-Validar evento
-        ↓
-Validar estado
-        ↓
-Validar fecha
-        ↓
-Validar quantity
-        ↓
-Buscar inscripción duplicada
-        ↓
-Calcular cupos
-        ↓
-Tickets Repository
-        ↓
-Tickets DAO
-        ↓
-Ticket Model
-        ↓
-MongoDB
-        ↓
-Ticket DTO
-        ↓
-Response
-```
-
----
-
-# Ejemplo de flujo de cancelación
-
-```text
-Usuario autenticado
-        ↓
-PATCH /api/tickets/:tid/cancel
-        ↓
-Tickets Controller
-        ↓
-Tickets Service
-        ↓
-Buscar ticket
-        ↓
-Validar propietario o admin
-        ↓
-Validar estado
-        ↓
-Tickets Repository
-        ↓
-Tickets DAO
-        ↓
-Actualizar Ticket
-        ↓
-Ticket DTO
-        ↓
-Response
-```
-
----
-
-# Ejemplo de flujo de registro
-
-```text
-POST /api/sessions/register
-        ↓
-Passport register
-        ↓
-Sessions Service
-        ↓
-Validaciones
-        ↓
-User Repository
-        ↓
-User DAO
-        ↓
-User Model
-        ↓
-MongoDB
-        ↓
-User DTO
-        ↓
-Response
-```
-
----
-
-# Casos probados antes de entregar
-
-## Flujo completo
-
-Se probó:
-
-```text
-registro
-↓
-login
-↓
-crear evento
-↓
-inscribirse
-↓
-consultar mis tickets
-↓
-cancelar ticket
-↓
-consultar nuevamente
-```
-
-Resultado:
-
-```text
-APROBADO
-```
-
----
-
-## Current sin password
-
-Ruta:
-
-```http
-GET /api/sessions/current
-```
-
-La respuesta contiene:
-
-```text
-id
-email
-role
-```
-
-No contiene:
-
-```text
-password
-```
-
-Resultado:
-
-```text
-APROBADO
-```
-
----
-
-## Ticket con populate
-
-La consulta:
+## Mis tickets
 
 ```http
 GET /api/tickets/my-tickets
 ```
 
-devolvió el evento relacionado mediante `populate`.
+Devuelve solamente los tickets del usuario autenticado.
 
-La respuesta no expuso ningún password.
-
-Resultado:
+Se utiliza `populate` para incluir algunos datos básicos del evento:
 
 ```text
-APROBADO
+title
+date
+location
 ```
 
----
-
-## Error de negocio
-
-Se intentó crear una segunda inscripción activa para el mismo usuario y evento.
-
-Resultado:
+## Tickets de un evento
 
 ```http
-409 Conflict
+GET /api/events/:eid/tickets
 ```
 
-Mensaje:
+Solamente pueden acceder:
 
 ```text
-Ya tenés una inscripción activa para este evento
+organizer dueño del evento
+admin
 ```
 
-El error no fue convertido en `500`.
-
-Resultado:
-
-```text
-APROBADO
-```
-
----
-
-## Endpoint protegido sin sesión
-
-Se consultó:
+## Cancelar ticket
 
 ```http
-GET /api/sessions/current
+PATCH /api/tickets/:tid/cancel
 ```
 
-sin cookie.
+No se elimina el documento.
 
-Resultado:
-
-```http
-401 Unauthorized
-```
-
-Respuesta:
-
-```json
-{
-  "status": "error",
-  "message": "No autenticado"
-}
-```
-
-Resultado:
+Se actualizan:
 
 ```text
-APROBADO
+status = cancelled
+cancelledAt = fecha actual
 ```
 
----
+Puede cancelar el dueño del ticket o un admin.
 
-## Usuario autenticado sin permisos
+## DTO
 
-Un usuario con rol:
+Se crearon DTO para:
 
 ```text
-user
+User
+Event
+Ticket
 ```
 
-intentó crear un evento.
-
-Resultado:
-
-```http
-403 Forbidden
-```
-
-Mensaje:
+Están ubicados en:
 
 ```text
-No tenés permisos para realizar esta acción
+src/dto/
 ```
 
-Resultado:
+Sirven para controlar los datos que salen en las respuestas.
+
+Por ejemplo, el password nunca se devuelve aunque esté guardado hasheado en MongoDB.
+
+## DAO y Repository
+
+Los DAO son los únicos archivos que trabajan directamente con los modelos de Mongoose.
 
 ```text
-APROBADO
+src/dao/users.dao.js
+src/dao/events.dao.js
+src/dao/tickets.dao.js
 ```
 
----
-
-# Seguridad
-
-La API implementa:
-
-- autenticación mediante JWT
-- JWT almacenado en cookie httpOnly
-- Passport para autenticación
-- contraseñas protegidas con bcrypt
-- autorización por roles
-- autorización por propiedad de recursos
-- DTO para controlar respuestas
-- password excluido de respuestas públicas
-- variables sensibles almacenadas en `.env`
-- manejo centralizado de errores
-- validaciones de negocio en services
-- cancelación lógica de tickets
-
----
-
-# Separación de responsabilidades
-
-La arquitectura cumple las siguientes reglas:
+Los repositories utilizan los DAO:
 
 ```text
-Models
-↑
-solo son usados directamente por DAO
-
-DAO
-↑
-solo son usados por Repository
-
-Repository
-↑
-son utilizados por Services
-
-Services
-↑
-contienen la lógica de negocio
-
-Controllers
-↑
-coordinan request y response
-
-DTO
-↑
-controlan la información de salida
+src/repositories/users.repository.js
+src/repositories/events.repository.js
+src/repositories/tickets.repository.js
 ```
 
-Los controllers no importan modelos.
+Los services utilizan los repositories y no los modelos directamente.
 
-Los services no importan DAO ni modelos.
+## Emails
 
-Los repositories no importan controllers ni services.
+Cuando una inscripción se crea correctamente se envía un email de confirmación utilizando Nodemailer.
 
-Los DAO son los únicos archivos que importan directamente los modelos de Mongoose.
-
----
-
-# Estructura principal
+La configuración se encuentra en:
 
 ```text
-src/
-├── config/
-│   ├── database.js
-│   ├── env.js
-│   ├── mailer.js
-│   └── passport.config.js
-│
-├── controllers/
-│   ├── events.controller.js
-│   ├── health.controller.js
-│   ├── sessions.controller.js
-│   ├── tickets.controller.js
-│   └── users.controller.js
-│
-├── dao/
-│   ├── events.dao.js
-│   ├── tickets.dao.js
-│   └── users.dao.js
-│
-├── dto/
-│   ├── event.dto.js
-│   ├── ticket.dto.js
-│   └── user.dto.js
-│
-├── middlewares/
-│   ├── async.middleware.js
-│   ├── auth.middleware.js
-│   ├── authorize.middleware.js
-│   ├── error.middleware.js
-│   └── event-owner.middleware.js
-│
-├── models/
-│   ├── Event.js
-│   ├── Ticket.js
-│   └── User.js
-│
-├── repositories/
-│   ├── events.repository.js
-│   ├── tickets.repository.js
-│   └── users.repository.js
-│
-├── routes/
-│   ├── events.router.js
-│   ├── health.router.js
-│   ├── sessions.router.js
-│   ├── tickets.router.js
-│   └── users.router.js
-│
-├── services/
-│   ├── authorization.service.js
-│   ├── events.service.js
-│   ├── mail.service.js
-│   ├── sessions.service.js
-│   ├── tickets.service.js
-│   └── users.service.js
-│
-├── utils/
-│   ├── hash.js
-│   └── jwt.js
-│
-├── app.js
-└── server.js
+src/config/mailer.js
 ```
 
----
+y el envío se realiza desde:
 
-# Archivos que no deben subirse
+```text
+src/services/mail.service.js
+```
+
+El mail contiene:
+
+- nombre del evento
+- fecha
+- lugar
+- cantidad
+- código de reserva
+
+Las credenciales están configuradas mediante variables de entorno.
+
+## Manejo de errores
+
+La API tiene un middleware centralizado:
+
+```text
+src/middlewares/error.middleware.js
+```
+
+Se utilizan códigos distintos según el error:
+
+```text
+400 - datos inválidos
+401 - no autenticado
+403 - sin permisos
+404 - recurso no encontrado
+409 - conflicto
+500 - error interno
+```
+
+## Cómo probar organizer y admin
+
+El registro público siempre crea usuarios con rol `user`.
+
+Para realizar pruebas de organizer y admin se puede modificar temporalmente el campo `role` del usuario desde MongoDB Atlas.
+
+Después de cambiarlo hay que volver a iniciar sesión para generar un JWT con el rol nuevo.
+
+## Pruebas realizadas
+
+Antes de entregar se probaron los casos principales pedidos.
+
+1. Registro, login, `/current`, logout y `/current` sin sesión → `401`.
+2. Usuario común intentando crear un evento → `403`.
+3. Organizer creando evento y usuario inscribiéndose correctamente.
+4. Inscripción duplicada → `409`.
+5. Evento con capacidad completa → `409`.
+6. Cancelación de ticket libera el cupo y permite una nueva inscripción.
+7. Organizer intentando modificar un evento ajeno → `403`.
+8. Admin modificando un evento creado por otro organizer → `200`.
+9. Las respuestas de usuarios, eventos y tickets no muestran passwords.
+10. El listado con `status`, `page` y `limit` devuelve la estructura paginada correctamente.
+
+También se comprobó que el email de confirmación de inscripción llega correctamente.
+
+## Archivos que no se suben
 
 ```text
 .env
 node_modules/
 cookies.txt
+juan.txt
+organizer.txt
 ```
 
-El repositorio debe incluir:
-
-```text
-.env.example
-```
-
-sin credenciales reales.
-
----
-
-# Pre-entrega 8 completada
-
-La aplicación fue refactorizada utilizando:
-
-```text
-DAO
-Repository
-Service
-Controller
-DTO
-```
-
-Se verificó que:
-
-- solamente los DAO importen modelos de Mongoose
-- los repositories consuman DAO
-- los services consuman repositories
-- la lógica de negocio permanezca en services
-- los controllers se limiten a request y response
-- los DTO controlen las respuestas
-- ningún password sea expuesto
-- los errores utilicen códigos HTTP adecuados
-- exista manejo centralizado de errores
-- los endpoints existentes continúen funcionando
-- tickets, cupos, permisos y notificaciones continúen operativos
-
-Los casos obligatorios de la Pre-entrega 8 fueron probados correctamente antes de la entrega.
+El repositorio solamente incluye `.env.example` sin credenciales reales.

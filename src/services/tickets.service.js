@@ -83,7 +83,7 @@ export const createNewTicket = async (
     const error = new Error(
       'No hay cupos suficientes disponibles'
     )
-    error.statusCode = 400
+    error.statusCode = 409
     throw error
   }
 
